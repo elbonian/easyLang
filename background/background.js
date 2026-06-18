@@ -138,24 +138,8 @@ async function translateBatch(segments) {
     }
 
     const data = await res.json();
-    const choice = data?.choices?.[0];
-    let raw = choice?.message?.content;
-
-    // Some reasoning models put the JSON inside the reasoning field.
-    if (!raw || !raw.trim()) {
-      raw = choice?.message?.reasoning;
-    }
-
-    // Detect model refusals before attempting JSON parse.
-    if (raw && isRefusal(raw)) {
-      return {
-        ok: false,
-        code: "REFUSAL",
-        error: "The model refused to translate this content. Skipping batch."
-      };
-    }
-
-    const translations = parseTranslationArray(raw);
+    const content = data?.choices?.[0]?.message?.content;
+    const translations = parseTranslationArray(content);
 
     if (translations.length !== segments.length) {
       return {
@@ -178,24 +162,6 @@ async function translateBatch(segments) {
   } finally {
     clearTimeout(timer);
   }
-}
-
-/** Check if the raw model output is a refusal instead of JSON. */
-function isRefusal(text) {
-  const lower = text.trim().toLowerCase();
-  return (
-    lower.startsWith("i'm sorry") ||
-    lower.startsWith("i am sorry") ||
-    lower.startsWith("sorry") ||
-    lower.startsWith("i cannot") ||
-    lower.startsWith("i can't") ||
-    lower.startsWith("i’m sorry") ||
-    lower.startsWith("i can’t") ||
-    lower.includes("can't help with that") ||
-    lower.includes("cannot help with that") ||
-    lower.includes("refuse to translate") ||
-    lower.includes("unable to translate")
-  );
 }
 
 function truncate(str, max) {
