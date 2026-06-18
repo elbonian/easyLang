@@ -210,16 +210,24 @@
     throw lastError;
   }
 
+  const POLL_INTERVAL_MS = 2000;
+  const MAX_POLL_MS = 185000; // 180s max user timeout + 5s buffer
+
   /**
-   * Request one batch with bounded retries. Retries transient failures and
-   * length mismatches a few times, then returns the last failing response so
-   * the caller can skip the batch. Never loops forever.
+   * Request one batch with bounded retries. The background returns a job ID
+   * immediately and runs the LLM call asynchronously; we poll for completion.
+   * This bypasses Firefox's ~30s runtime.sendMessage response limit.
    */
   async function requestBatchWithRetry(segments) {
     let response;
     for (let attempt = 1; attempt <= MAX_BATCH_ATTEMPTS; attempt++) {
       try {
-        response = await sendToBackground({ type: "translateBatch", segments });
+        const jobResp = await sendToBackground({ type: "translateBatch", segments });
+        if (!jobResp || !jobResp.ok) {
+          response = jobResp || { ok: false, code: "NETWORK_ERROR", error: "No response from background." };
+        } else {
+          response = await pollJobResult(jobResp.jobId);
+        }
       } catch (err) {
         response = { ok: false, code: "NETWORK_ERROR", error: String(err?.message || err) };
       }
@@ -237,6 +245,32 @@
       if (attempt < MAX_BATCH_ATTEMPTS) await sleep(RETRY_BACKOFF_MS);
     }
     return response;
+  }
+
+  async function pollJobResult(jobId) {
+    const start = Date.now();
+    while (Date.now() - start < MAX_POLL_MS) {
+      const status = await sendToBackground({ type: "getJobResult", jobId });
+      if (!status || !status.ok) {
+        return status || { ok: false, code: "NETWORK_ERROR", error: "Could not check job status." };
+      }
+
+      if (status.status === "done") {
+        return { ok: true, translations: status.translations };
+      }
+      if (status.status === "error") {
+        return { ok: false, code: status.code, error: status.error };
+      }
+      if (status.status === "pending") {
+        if (state.cancelRequested) {
+          return { ok: false, code: "CANCELLED", error: "Translation cancelled by user." };
+        }
+        await sleep(POLL_INTERVAL_MS);
+        continue;
+      }
+      return { ok: false, code: "NETWORK_ERROR", error: "Unknown job status." };
+    }
+    return { ok: false, code: "TIMEOUT", error: "Translation job timed out." };
   }
 
   async function translatePage() {
