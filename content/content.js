@@ -16,7 +16,7 @@
 
   const WRAPPER_CLASS = "easylang-translated";
   const MAX_BATCH_CHARS = 3000;
-  const MAX_BATCH_NODES = 20;
+  const MAX_BATCH_NODES = 8;           // keep local model requests under Firefox's ~30s message timeout
   const MAX_BATCH_ATTEMPTS = 3;        // initial try + bounded retries per batch
   const RETRY_BACKOFF_MS = 500;        // pause between batch retries
   const MAX_CONSECUTIVE_FAILURES = 3;  // give up early if failures are systemic
