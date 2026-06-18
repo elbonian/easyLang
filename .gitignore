@@ -1,0 +1,9 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Benchmark tooling & Python scripts (not part of the extension)
+benchmark.py
+test-endpoint.py
+bench-config.json
+bench-config.example.json

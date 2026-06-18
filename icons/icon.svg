@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b8def"/>
+      <stop offset="1" stop-color="#7b5bef"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="84" height="84" rx="20" fill="url(#g)"/>
+  <path d="M20 70 q0 8 8 8 h32 l14 10 v-10 q8 0 8-8 V30 q0-8-8-8 H28 q-8 0-8 8 z" fill="#ffffff" opacity="0.95"/>
+  <text x="48" y="58" font-family="'Hiragino Sans','Noto Sans JP',sans-serif" font-size="34" font-weight="700" fill="#5b6bef" text-anchor="middle">あ</text>
+</svg>

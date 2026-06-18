@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="popup.css" />
+  <title>easyLang</title>
+</head>
+<body>
+  <header class="header">
+    <span class="logo">あ</span>
+    <h1 class="title">easyLang</h1>
+  </header>
+
+  <main class="body">
+    <div class="toggle-row">
+      <div class="toggle-labels">
+        <span class="toggle-label">Translate page</span>
+        <span id="status" class="status status--off">OFF</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <p id="hint" class="hint"></p>
+  </main>
+
+  <footer class="footer">
+    <button id="open-settings" class="settings-btn">Settings</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
