@@ -19,7 +19,7 @@
   const MAX_BATCH_NODES = 20;
   const MAX_BATCH_ATTEMPTS = 3;        // initial try + bounded retries per batch
   const RETRY_BACKOFF_MS = 500;        // pause between batch retries
-  const MAX_CONSECUTIVE_FAILURES = 3;  // give up early if failures are systemic
+  const MAX_CONSECUTIVE_FAILURES = 5;  // give up early if failures are systemic
 
   // Text worth translating must contain at least one letter (any script).
   // Pure numbers / punctuation / symbols are skipped: they push the model to
@@ -230,8 +230,8 @@
         response.translations.length === segments.length;
       if (ok) return response;
 
-      // Missing settings or a user cancel are not worth retrying.
-      if ((response && response.code === "NO_SETTINGS") || state.cancelRequested) {
+      // Missing settings, a refusal, or a user cancel are not worth retrying.
+      if ((response && (response.code === "NO_SETTINGS" || response.code === "REFUSAL")) || state.cancelRequested) {
         return response;
       }
       if (attempt < MAX_BATCH_ATTEMPTS) await sleep(RETRY_BACKOFF_MS);
