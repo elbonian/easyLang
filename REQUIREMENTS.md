@@ -1,7 +1,7 @@
 # easyLang v1 Requirements Document
 
 ## Overview
-A Firefox browser extension that translates visible web page text into JLPT N5-level Japanese with furigana, using a user-configurable OpenAI-compliant LLM endpoint.
+A Firefox browser extension that translates visible web page text into simple JLPT N5-level Japanese, using a user-configurable OpenAI-compliant LLM endpoint.
 
 ---
 
@@ -16,7 +16,7 @@ A Firefox browser extension that translates visible web page text into JLPT N5-l
 ### FR-2: Text Extraction & Scope
 - **FR-2.1**: The extension shall extract visible text nodes from the active page’s DOM.
 - **FR-2.2**: The extension shall skip the following elements and their descendants:
-  - `<script>`, `<style>`, `<noscript>`, `<iframe>`, `<code>`, `<pre>`, `<textarea>`, `<input>`, `<canvas>`, `<svg>`, `<ruby>`, `<rt>`, `<rp>`
+  - `<script>`, `<style>`, `<noscript>`, `<iframe>`, `<code>`, `<pre>`, `<textarea>`, `<input>`, `<canvas>`, `<svg>`
 - **FR-2.3**: The extension shall skip empty or whitespace-only text nodes.
 - **FR-2.4**: The extension shall skip text already inside a translation wrapper to avoid double-translation.
 
@@ -25,16 +25,15 @@ A Firefox browser extension that translates visible web page text into JLPT N5-l
 - **FR-3.2**: The extension shall send each batch to a background script that calls a configurable LLM API.
 - **FR-3.3**: The API request shall use an OpenAI-compliant chat completions endpoint.
 - **FR-3.4**: The prompt shall instruct the LLM to:
-  - Translate each segment into JLPT N5-level Japanese
+  - Translate each segment into simple JLPT N5-level Japanese
   - If text is already Japanese, rewrite it to N5 level
-  - Add furigana to **all kanji** using HTML `<ruby>` tags (e.g., `<ruby>漢字<rt>かんじ</rt></ruby>`)
   - Return results **only** as a JSON array of strings, preserving input order
 - **FR-3.5**: The extension shall parse the LLM response, validate array length matches input count, and apply translations.
 
 ### FR-4: Inline Replacement
 - **FR-4.1**: Each translated text node shall replace its original text inline in the DOM.
 - **FR-4.2**: The original text shall be stored in a `data` attribute on the wrapper element for restoration.
-- **FR-4.3**: Translated content shall be injected as HTML (to render `<ruby>` tags), wrapped in a `<span class="easylang-translated">`.
+- **FR-4.3**: Translated content shall be inserted into the DOM as plain text, wrapped in a `<span class="easylang-translated">`.
 
 ### FR-5: Error Handling
 - **FR-5.1**: If the API call fails (network error, HTTP error, or timeout), the extension shall display a fixed-position toast on the page.
@@ -71,7 +70,7 @@ A Firefox browser extension that translates visible web page text into JLPT N5-l
 
 ### NFR-3: Security
 - **NFR-3.1**: The API key shall be stored only in `browser.storage.local` (not hardcoded).
-- **NFR-3.2**: Content script shall not execute untrusted scripts from LLM responses (innerHTML is acceptable only for `<ruby>` tags from a trusted LLM output).
+- **NFR-3.2**: Content script shall not execute untrusted scripts from LLM responses. Translated content is inserted as plain text, not HTML.
 
 ### NFR-4: UX
 - **NFR-4.1**: Popup UI shall be clean, minimal, and responsive (260px width).
@@ -85,6 +84,7 @@ A Firefox browser extension that translates visible web page text into JLPT N5-l
 - Hover-to-see-original text
 - SPA / dynamic content mutation observer
 - Per-site allow/block lists
-- Caching translations to reduce API calls
-- Furigana toggle (show/hide)
 - JLPT N4–N1 level selection
+
+## 4. Planned (Not Yet Implemented)
+- Caching translated segments by hash to reduce API calls and latency, with a "Clear cache" control in Settings.

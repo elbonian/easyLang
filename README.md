@@ -1,13 +1,12 @@
 # easyLang
 
-A Firefox (Manifest V3) browser extension that translates the visible text of any web page into **JLPT N5-level Japanese with furigana**, using a user-configurable OpenAI-compliant LLM endpoint.
+A Firefox (Manifest V3) browser extension that translates the visible text of any web page into **simple JLPT N5-level Japanese**, using a user-configurable OpenAI-compliant LLM endpoint.
 
 ## Features
 
 - One-click toggle from the toolbar popup to translate / restore the active page.
-- Visible text extraction via `TreeWalker`, skipping code, inputs, SVG, existing ruby, etc.
+- Visible text extraction via `TreeWalker`, skipping code, inputs, SVG, etc.
 - Sequential batch translation (max ~3,000 chars or 20 nodes per request) to a configurable chat-completions API.
-- Furigana rendered with HTML `<ruby>` tags.
 - Exact restore of the original page when toggled off.
 - On-page loading indicator and auto-dismissing error toast.
 - Settings page for endpoint, API key (masked), model, temperature, and request timeout.
@@ -49,14 +48,14 @@ easyLang/
 
 1. Open any regular `http(s)` web page.
 2. Click the toolbar icon and flip the **Translate page** switch ON.
-3. The page text is replaced with JLPT N5 Japanese (with furigana). Flip OFF to restore.
+3. The page text is replaced with simple JLPT N5 Japanese. Flip OFF to restore.
 
 ## Notes & limitations
 
 - API requests time out after a configurable interval (**default 60s**, set in Settings). Each batch is retried a few times on transient errors or length mismatches; batches that still fail are skipped (left in the original language) so the rest of the page stays translated. A blocking failure (e.g. missing settings) shows an error toast.
 - Translation runs once over the current DOM. Dynamically loaded / SPA content added after toggling is **not** re-translated (out of scope for v1).
 - The API key is never hardcoded; it lives in `browser.storage.local`.
-- Translated HTML is injected only to render trusted `<ruby>` furigana markup from the model output.
+- Translated text is injected as plain text; no HTML markup from the model is trusted.
 
 ## Security
 
