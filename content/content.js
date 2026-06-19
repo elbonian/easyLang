@@ -119,8 +119,7 @@
     const wrapper = document.createElement("span");
     wrapper.className = WRAPPER_CLASS;
     wrapper.dataset.easylangOriginal = node.nodeValue;
-    // Trusted, constrained LLM output (ruby furigana markup). See NFR-3.2.
-    wrapper.innerHTML = translatedHtml;
+    wrapper.textContent = translatedHtml;
 
     parent.replaceChild(wrapper, node);
     applied.push({ wrapper, originalNode: node });
@@ -217,6 +216,9 @@
    * Request one batch with bounded retries. The background returns a job ID
    * immediately and runs the LLM call asynchronously; we poll for completion.
    * This bypasses Firefox's ~30s runtime.sendMessage response limit.
+   *
+   * If the whole batch still fails, we fall back to translating each segment
+   * individually so that only the truly problematic segments are skipped.
    */
   async function requestBatchWithRetry(segments) {
     let response;
@@ -239,6 +241,62 @@
       if (ok) return response;
 
       // Missing settings or a user cancel are not worth retrying.
+      if ((response && response.code === "NO_SETTINGS") || state.cancelRequested) {
+        return response;
+      }
+      if (attempt < MAX_BATCH_ATTEMPTS) await sleep(RETRY_BACKOFF_MS);
+    }
+
+    // Fallback: translate each segment individually.
+    const translations = new Array(segments.length).fill(null);
+    let anySuccess = false;
+    for (let i = 0; i < segments.length; i++) {
+      const segResponse = await requestSingleSegmentWithRetry(segments[i]);
+      if (segResponse && segResponse.code === "NO_SETTINGS") {
+        return segResponse;
+      }
+      if (state.cancelRequested) {
+        return segResponse || { ok: false, code: "CANCELLED", error: "Translation cancelled by user." };
+      }
+      if (
+        segResponse &&
+        segResponse.ok &&
+        Array.isArray(segResponse.translations) &&
+        segResponse.translations.length === 1 &&
+        typeof segResponse.translations[0] === "string"
+      ) {
+        translations[i] = segResponse.translations[0];
+        anySuccess = true;
+      }
+    }
+
+    if (anySuccess) {
+      return { ok: true, translations };
+    }
+    return response;
+  }
+
+  async function requestSingleSegmentWithRetry(segment) {
+    let response;
+    for (let attempt = 1; attempt <= MAX_BATCH_ATTEMPTS; attempt++) {
+      try {
+        const jobResp = await sendToBackground({ type: "translateBatch", segments: [segment] });
+        if (!jobResp || !jobResp.ok) {
+          response = jobResp || { ok: false, code: "NETWORK_ERROR", error: "No response from background." };
+        } else {
+          response = await pollJobResult(jobResp.jobId);
+        }
+      } catch (err) {
+        response = { ok: false, code: "NETWORK_ERROR", error: String(err?.message || err) };
+      }
+
+      const ok =
+        response && response.ok &&
+        Array.isArray(response.translations) &&
+        response.translations.length === 1 &&
+        typeof response.translations[0] === "string";
+      if (ok) return response;
+
       if ((response && response.code === "NO_SETTINGS") || state.cancelRequested) {
         return response;
       }
@@ -302,16 +360,26 @@
 
       if (state.cancelRequested) break;
 
-      const succeeded =
-        response && response.ok &&
-        Array.isArray(response.translations) &&
-        response.translations.length === batch.length;
+      const hasTranslations = response && response.ok && Array.isArray(response.translations);
 
-      if (succeeded) {
+      if (hasTranslations) {
+        let batchSuccesses = 0;
         for (let j = 0; j < batch.length; j++) {
-          applyTranslation(batch[j], response.translations[j]);
+          const translation = response.translations[j];
+          if (translation && typeof translation === "string") {
+            applyTranslation(batch[j], translation);
+            batchSuccesses++;
+          } else {
+            skipped++;
+          }
         }
-        consecutiveFailures = 0;
+
+        // Only reset the systemic-failure counter if we got at least one segment.
+        if (batchSuccesses > 0) {
+          consecutiveFailures = 0;
+        } else {
+          consecutiveFailures++;
+        }
         showLoading(i + 1, batches.length);
         continue;
       }
