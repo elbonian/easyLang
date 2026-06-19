@@ -22,17 +22,15 @@ const SYSTEM_PROMPT = [
   "For EACH input string, produce one output string following these rules:",
   "1. Translate the meaning into natural JLPT N5-level Japanese.",
   "2. If the input is already Japanese, rewrite it into JLPT N5-level Japanese.",
-  "3. Furigana is MANDATORY: wrap EVERY kanji in HTML ruby tags with its hiragana reading, e.g. <ruby>漢字<rt>かんじ</rt></ruby>.",
-  "4. This applies to ALL kanji without exception, including common words such as 私(わたし), 続(つづ)ける, 今日(きょう), 天気(てんき), 店(みせ).",
-  "5. Never leave any kanji outside a <ruby> tag. Put ONLY the kana reading inside <rt>; kana and punctuation that follow a kanji stay OUTSIDE the <ruby> tag.",
-  "6. Keep the segment count and order identical to the input.",
-  "7. Do not add explanations, numbering, or extra punctuation that was not implied by the source.",
+  "3. Use simple vocabulary and grammar that a JLPT N5 learner can understand.",
+  "4. Keep the segment count and order identical to the input.",
+  "5. Do not add explanations, numbering, or extra punctuation that was not implied by the source.",
   "Return ONLY a JSON array of strings, the same length as the input array, in the same order.",
   "Do not wrap the JSON in markdown fences or any other text.",
   "Example input:",
   '["Welcome to our store.","今日は良い天気です。"]',
   "Example output:",
-  '["<ruby>私<rt>わたし</rt></ruby>たちの<ruby>店<rt>みせ</rt></ruby>へようこそ。","<ruby>今日<rt>きょう</rt></ruby>は<ruby>良<rt>よ</rt></ruby>い<ruby>天気<rt>てんき</rt></ruby>です。"]'
+  '["私たちの店へようこそ。","今日は良い天気です。"]'
 ].join("\n");
 
 /** Read and normalize settings from storage. */
